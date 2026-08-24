@@ -1,0 +1,64 @@
+{
+  "schema": 1,
+  "name": "binrev",
+  "github": "https://github.com/SuperMarioYL/binrev",
+  "host": "binrev.lei6393.com",
+  "lang": { "primary": "zh", "toggle": true },
+  "accent": ["#e6a144", "#d97b2e", "#c46a1f"],
+  "hero": {
+    "eyebrow": { "zh": "固件 · 国产芯片 · 无符号", "en": "Firmware · CN SoCs · No Symbols" },
+    "headline": {
+      "zh": "让 agent 第一次\n真正读懂固件",
+      "en": "Let agents finally\nread firmware"
+    },
+    "sub": {
+      "zh": "把固件里的函数、调用、反编译结果变成 agent 能直接查改的对象——而不是日志里的一行文本。国产芯片固件，从此可被读懂。",
+      "en": "Functions, call graphs, and decompiled results become objects the agent can query and change — not just lines of log text. CN-SoC firmware, finally legible to agents."
+    },
+    "command": "binrev inspect ./firmware.bin --isa arm",
+    "cta": { "text": { "zh": "快速开始", "en": "Quick start" } },
+    "ctaGithub": { "text": { "zh": "GitHub", "en": "GitHub" } },
+    "scroll": { "text": { "zh": "向下看", "en": "Scroll" } }
+  },
+  "advantages": [
+    {
+      "title": { "zh": "固件不再是黑盒", "en": "Firmware is no longer a black box" },
+      "body": {
+        "zh": "agent 自己追函数、追调用关系、读反编译——像读源码一样读固件，不用再靠手翻交叉引用。",
+        "en": "The agent traces functions, call graphs, and decompiled code on its own — reading firmware like source, no more hand-trawling cross-references."
+      },
+      "chips": ["› 自主追函数表", "› 自主追调用关系", "› 自主读反编译"]
+    },
+    {
+      "title": { "zh": "国产芯片固件也能逆", "en": "CN-SoC firmware, reverse-engineerable" },
+      "body": {
+        "zh": "默认对接国产模型，不再迁就海外 API。车机 ECU、信创固件这些以二进制交付、符号稀缺的目标，第一次有 agent 能上手。",
+        "en": "Built for CN models out of the box, no more bending to overseas APIs. Head-unit ECUs and 信创 firmware — delivered as binaries with scarce symbols — finally have an agent that can take them on."
+      },
+      "chips": ["› 默认国产模型", "› 车机 ECU / 信创固件", "› 无符号也能上手"]
+    },
+    {
+      "title": { "zh": "一条命令看清骨架", "en": "See the skeleton in one command" },
+      "body": {
+        "zh": "不用先装一整套重型工具——单条命令列出函数表与调用关系，反编译随用随看。",
+        "en": "No need to install a heavy toolchain first — one command lists functions and call graphs, decompilation on demand."
+      },
+      "chips": ["› 单命令函数表", "› 调用关系一目了然", "› 零重型依赖起步"]
+    },
+    {
+      "title": { "zh": "每一步推理都留痕", "en": "Every step leaves a trace" },
+      "body": {
+        "zh": "agent 跨步骤记笔记、留线索，不会每轮从头来。逆到一半的上下文，下一次接着用。",
+        "en": "The agent takes notes across steps and keeps its thread — not starting from scratch each turn. Half-done context picks up where it left off."
+      },
+      "chips": ["› 跨步骤笔记", "› 上下文不丢", "› 断点续逆"]
+    }
+  ],
+  "scene": { "kind": "mesh" },
+  "cta": {
+    "headline": { "zh": "给 agent 一个能上手固件的动作空间", "en": "Give agents an action space that can work firmware" },
+    "sub": { "zh": "开源 · MIT · Python", "en": "Open source · MIT · Python" },
+    "button": { "zh": "查看 GitHub", "en": "See on GitHub" }
+  },
+  "footer": { "tag": { "zh": "MIT · 开源", "en": "MIT · Open source" } }
+}
