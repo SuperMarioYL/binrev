@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "binrev"
+version = "0.1.0"
+description = "Binary-action-space reverse-engineering agent — decompiled graph, xrefs and ISA state as first-class context for Qwen/DeepSeek."
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "MIT" }
+authors = [{ name = "SuperMarioYL" }]
+keywords = ["reverse-engineering", "firmware", "arm", "agent", "binary-analysis", "ghidra", "qwen", "deepseek"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Security",
+    "Topic :: Software Development :: Disassemblers",
+]
+dependencies = [
+    "openai>=1.40",
+    "capstone>=5.0",
+    "pydantic>=2.0",
+    "rich>=13.0",
+    "click>=8.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+]
+
+[project.scripts]
+binrev = "binrev.cli:cli"
+
+[project.urls]
+Homepage = "https://github.com/SuperMarioYL/binrev"
+Repository = "https://github.com/SuperMarioYL/binrev"
+Issues = "https://github.com/SuperMarioYL/binrev/issues"
+
+[tool.setuptools]
+packages = ["binrev"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

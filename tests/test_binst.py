@@ -1,0 +1,132 @@
+"""Tests for the BinState capstone loader and read-only query methods.
+
+Uses a tiny real ARM ELF + raw blob (see conftest) — no external binary
+download, no Ghidra, no real LLM keys.
+"""
+
+from __future__ import annotations
+
+import pytest
+
+# Skip the whole module if capstone (a key dep) is not importable here.
+pytest.importorskip("capstone", reason="capstone not installed in this env")
+
+from binrev.binst import build_from_bytes, load_binary, render_inspect  # noqa: E402
+from binrev.models import ISAKind, XrefKind  # noqa: E402
+
+
+def test_build_from_bytes_detects_two_functions(arm_code, base_addr):
+    state = build_from_bytes(arm_code, ISAKind.ARM, base_addr=base_addr, entry=base_addr)
+    # entry + the bl-call target => two functions
+    assert len(state.functions) == 2
+    assert base_addr in state.functions
+    callee = base_addr + 0xC
+    assert callee in state.functions
+    assert state.functions[base_addr].name == "entry"
+
+
+def test_build_from_bytes_records_call_xref(arm_code, base_addr):
+    state = build_from_bytes(arm_code, ISAKind.ARM, base_addr=base_addr, entry=base_addr)
+    callee = base_addr + 0xC
+    refs = state.xrefs_to(callee)
+    assert len(refs) == 1
+    assert refs[0].kind == XrefKind.CALL
+    assert refs[0].from_addr == base_addr + 4
+    assert refs[0].to_addr == callee
+
+
+def test_decompile_returns_listing(arm_code, base_addr):
+    state = build_from_bytes(arm_code, ISAKind.ARM, base_addr=base_addr, entry=base_addr)
+    f = state.decompile(base_addr)
+    assert f is not None
+    assert "push" in f.decompilation
+    assert "bl" in f.decompilation
+    assert "pop" in f.decompilation
+
+
+def test_decompile_unknown_addr(arm_code, base_addr):
+    state = build_from_bytes(arm_code, ISAKind.ARM, base_addr=base_addr, entry=base_addr)
+    assert state.decompile(0xDEADBEEF) is None
+
+
+def test_list_funcs_sorted_and_filtered(arm_code, base_addr):
+    state = build_from_bytes(arm_code, ISAKind.ARM, base_addr=base_addr, entry=base_addr)
+    addrs = state.list_funcs()
+    assert addrs == sorted(addrs)
+    assert len(addrs) == 2
+    # name filter
+    assert state.list_funcs("entry") == [base_addr]
+    assert state.list_funcs("sub_") == [base_addr + 0xC]
+
+
+def test_xrefs_empty_for_unreferenced(arm_code, base_addr):
+    state = build_from_bytes(arm_code, ISAKind.ARM, base_addr=base_addr, entry=base_addr)
+    assert state.xrefs_to(base_addr) == []
+
+
+def test_set_note_persists(arm_code, base_addr):
+    state = build_from_bytes(arm_code, ISAKind.ARM, base_addr=base_addr, entry=base_addr)
+    assert state.notes == {}
+    state.set_note(base_addr, "entry calls helper at +0xc")
+    assert state.notes[base_addr] == "entry calls helper at +0xc"
+
+
+def test_search_strings_in_data_blob():
+    data = b"\x00firmware\x00version 1.0\x00\x01\x02ABCD\x00"
+    state = build_from_bytes(data, ISAKind.ARM, base_addr=0)
+    hits = state.search_strings("firmware")
+    assert len(hits) == 1
+    assert hits[0].value == "firmware"
+    hits2 = state.search_strings("version")
+    assert any("version" in s.value for s in hits2)
+
+
+def test_elf_text_section_extraction(arm_elf_file, arm_code, base_addr):
+    """A real ELF: .text bytes + entry point are extracted, not the headers."""
+    state = load_binary(arm_elf_file, ISAKind.ARM)
+    # entry + callee recovered from the .text bytes only
+    assert state.entry == base_addr
+    assert len(state.functions) == 2
+    assert state.functions[base_addr].name == "entry"
+    callee = base_addr + 0xC
+    assert callee in state.functions
+
+
+def test_raw_file_load(arm_raw_file, base_addr):
+    state = load_binary(arm_raw_file, ISAKind.ARM, base_addr=base_addr)
+    assert len(state.functions) >= 1
+    assert base_addr in state.functions
+
+
+def test_summary_string(arm_code, base_addr):
+    state = build_from_bytes(arm_code, ISAKind.ARM, base_addr=base_addr, entry=base_addr)
+    s = state.summary()
+    assert "ARM" in s
+    assert "funcs" in s
+    assert "capstone" in s
+
+
+def test_render_inspect_table(arm_code, base_addr):
+    state = build_from_bytes(arm_code, ISAKind.ARM, base_addr=base_addr, entry=base_addr)
+    out = render_inspect(state)
+    assert "binrev inspect" in out
+    assert "entry" in out
+    assert f"0x{base_addr:08x}" in out
+
+
+def test_render_inspect_single_func(arm_code, base_addr):
+    state = build_from_bytes(arm_code, ISAKind.ARM, base_addr=base_addr, entry=base_addr)
+    callee = base_addr + 0xC
+    out = render_inspect(state, func_addr=callee)
+    assert "decompilation" in out
+    assert "callers" in out
+    assert "call" in out
+    assert "push" in out
+
+
+def test_to_json_roundtrip(arm_code, base_addr):
+    state = build_from_bytes(arm_code, ISAKind.ARM, base_addr=base_addr, entry=base_addr)
+    state.set_note(base_addr, "test note")
+    j = state.to_json()
+    assert "test note" in j
+    assert "functions" in j

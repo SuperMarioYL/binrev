@@ -1,0 +1,112 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 340" width="880" height="340"
+     font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif"
+     role="img" aria-label="binrev architecture: ARM Binary → Agent Loop → Qwen/DeepSeek, dispatching tools over a BinState fed by Ghidra">
+  <defs>
+    <marker id="ah-d" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#5A5A66"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="880" height="340" fill="#1D1D1F"/>
+
+  <!-- static connectors (bottom layer) -->
+  <g stroke="#3A3A44" stroke-width="1.5" fill="none">
+    <line x1="250" y1="110" x2="355" y2="110" marker-end="url(#ah-d)"/>
+    <line x1="525" y1="110" x2="630" y2="110" marker-end="url(#ah-d)"/>
+    <line x1="440" y1="150" x2="440" y2="220" marker-end="url(#ah-d)"/>
+    <line x1="250" y1="260" x2="355" y2="260" marker-end="url(#ah-d)"/>
+    <line x1="525" y1="260" x2="630" y2="260" marker-end="url(#ah-d)"/>
+  </g>
+
+  <!-- marching-dash data flow (infinite loops, linear) -->
+  <g stroke-width="1.5" fill="none" stroke-linecap="round">
+    <line x1="250" y1="110" x2="345" y2="110" stroke="#4DA3FF" stroke-opacity="0.55" stroke-dasharray="6 10">
+      <animate attributeName="stroke-dashoffset" from="32" to="0" dur="1.6s" repeatCount="indefinite"/>
+    </line>
+    <line x1="525" y1="110" x2="620" y2="110" stroke="#8985FF" stroke-opacity="0.55" stroke-dasharray="6 10">
+      <animate attributeName="stroke-dashoffset" from="32" to="0" dur="1.6s" begin="-0.4s" repeatCount="indefinite"/>
+    </line>
+    <line x1="440" y1="150" x2="440" y2="210" stroke="#8985FF" stroke-opacity="0.55" stroke-dasharray="6 10">
+      <animate attributeName="stroke-dashoffset" from="32" to="0" dur="1.6s" begin="-0.8s" repeatCount="indefinite"/>
+    </line>
+    <line x1="250" y1="260" x2="345" y2="260" stroke="#4DA3FF" stroke-opacity="0.55" stroke-dasharray="6 10">
+      <animate attributeName="stroke-dashoffset" from="32" to="0" dur="1.6s" begin="-1.2s" repeatCount="indefinite"/>
+    </line>
+    <line x1="525" y1="260" x2="620" y2="260" stroke="#8985FF" stroke-opacity="0.55" stroke-dasharray="6 10">
+      <animate attributeName="stroke-dashoffset" from="32" to="0" dur="1.6s" begin="-0.6s" repeatCount="indefinite"/>
+    </line>
+  </g>
+
+  <!-- data packets (animateMotion along each connector) -->
+  <g>
+    <circle r="3" fill="#4DA3FF">
+      <animateMotion path="M250,110 L345,110" dur="2.4s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.15;0.85;1" dur="2.4s" repeatCount="indefinite"/>
+    </circle>
+    <circle r="3" fill="#8985FF">
+      <animateMotion path="M525,110 L620,110" dur="2.4s" begin="-1.2s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.15;0.85;1" dur="2.4s" begin="-1.2s" repeatCount="indefinite"/>
+    </circle>
+    <circle r="3" fill="#8985FF">
+      <animateMotion path="M440,150 L440,210" dur="2.4s" begin="-0.6s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.15;0.85;1" dur="2.4s" begin="-0.6s" repeatCount="indefinite"/>
+    </circle>
+    <circle r="3" fill="#4DA3FF">
+      <animateMotion path="M250,260 L345,260" dur="2.4s" begin="-1.8s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.15;0.85;1" dur="2.4s" begin="-1.8s" repeatCount="indefinite"/>
+    </circle>
+    <circle r="3" fill="#8985FF">
+      <animateMotion path="M525,260 L620,260" dur="2.4s" begin="-0.3s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.15;0.85;1" dur="2.4s" begin="-0.3s" repeatCount="indefinite"/>
+    </circle>
+  </g>
+
+  <!-- nodes: breathing fill-opacity, staggered -->
+  <g>
+    <!-- Row 1 -->
+    <rect x="80" y="70" width="170" height="80" rx="15" fill="#4DA3FF" fill-opacity="0.16" stroke="#4DA3FF" stroke-width="1.5">
+      <animate attributeName="fill-opacity" values="0.10;0.18;0.10" keyTimes="0;0.5;1" dur="3.2s"
+               calcMode="spline" keySplines="0.4 0 0.6 1;0.4 0 0.6 1" repeatCount="indefinite"/>
+    </rect>
+    <text x="165" y="115" text-anchor="middle" font-size="15" font-weight="600" fill="#4DA3FF">ARM Binary</text>
+    <text x="165" y="134" text-anchor="middle" font-size="11" fill="#A1A1A8">固件 / .bin / ELF</text>
+
+    <rect x="355" y="70" width="170" height="80" rx="15" fill="#8985FF" fill-opacity="0.16" stroke="#8985FF" stroke-width="1.5">
+      <animate attributeName="fill-opacity" values="0.10;0.18;0.10" keyTimes="0;0.5;1" dur="3.2s" begin="-0.8s"
+               calcMode="spline" keySplines="0.4 0 0.6 1;0.4 0 0.6 1" repeatCount="indefinite"/>
+    </rect>
+    <text x="440" y="115" text-anchor="middle" font-size="15" font-weight="600" fill="#8985FF">Agent Loop</text>
+    <text x="440" y="134" text-anchor="middle" font-size="11" fill="#A1A1A8">tool-call dispatch</text>
+
+    <rect x="630" y="70" width="170" height="80" rx="15" fill="#2DC79A" fill-opacity="0.16" stroke="#2DC79A" stroke-width="1.5">
+      <animate attributeName="fill-opacity" values="0.10;0.18;0.10" keyTimes="0;0.5;1" dur="3.2s" begin="-1.6s"
+               calcMode="spline" keySplines="0.4 0 0.6 1;0.4 0 0.6 1" repeatCount="indefinite"/>
+    </rect>
+    <text x="715" y="115" text-anchor="middle" font-size="15" font-weight="600" fill="#2DC79A">Qwen / DeepSeek</text>
+    <text x="715" y="134" text-anchor="middle" font-size="11" fill="#A1A1A8">OpenAI-compat API</text>
+
+    <!-- Row 2 -->
+    <rect x="80" y="220" width="170" height="80" rx="15" fill="#4DA3FF" fill-opacity="0.16" stroke="#4DA3FF" stroke-width="1.5">
+      <animate attributeName="fill-opacity" values="0.10;0.18;0.10" keyTimes="0;0.5;1" dur="3.2s" begin="-2.0s"
+               calcMode="spline" keySplines="0.4 0 0.6 1;0.4 0 0.6 1" repeatCount="indefinite"/>
+    </rect>
+    <text x="165" y="265" text-anchor="middle" font-size="15" font-weight="600" fill="#4DA3FF">Ghidra Bridge</text>
+    <text x="165" y="284" text-anchor="middle" font-size="11" fill="#A1A1A8">analyzeHeadless · dump</text>
+
+    <rect x="355" y="220" width="170" height="80" rx="15" fill="#8985FF" fill-opacity="0.16" stroke="#8985FF" stroke-width="1.5">
+      <animate attributeName="fill-opacity" values="0.10;0.18;0.10" keyTimes="0;0.5;1" dur="3.2s" begin="-1.2s"
+               calcMode="spline" keySplines="0.4 0 0.6 1;0.4 0 0.6 1" repeatCount="indefinite"/>
+    </rect>
+    <text x="440" y="265" text-anchor="middle" font-size="15" font-weight="600" fill="#8985FF">BinState</text>
+    <text x="440" y="284" text-anchor="middle" font-size="11" fill="#A1A1A8">funcs · xrefs · isa · notes</text>
+
+    <rect x="630" y="220" width="170" height="80" rx="15" fill="#8985FF" fill-opacity="0.16" stroke="#8985FF" stroke-width="1.5">
+      <animate attributeName="fill-opacity" values="0.10;0.18;0.10" keyTimes="0;0.5;1" dur="3.2s" begin="-0.4s"
+               calcMode="spline" keySplines="0.4 0 0.6 1;0.4 0 0.6 1" repeatCount="indefinite"/>
+    </rect>
+    <text x="715" y="265" text-anchor="middle" font-size="15" font-weight="600" fill="#8985FF">Tool Registry</text>
+    <text x="715" y="284" text-anchor="middle" font-size="11" fill="#A1A1A8">decompile · xref · notes</text>
+  </g>
+
+  <!-- dispatch label -->
+  <text x="455" y="190" font-size="10" fill="#A1A1A8">dispatch</text>
+</svg>
