@@ -1,144 +1,129 @@
-**English** | [简体中文](./README.md)
+[简体中文](./README.md) · [Website](https://binrev.lei6393.com) · [GitHub](https://github.com/SuperMarioYL/binrev)
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./assets/hero-dark.svg">
-  <source media="(prefers-color-scheme: light)" srcset="./assets/hero-light.svg">
-  <img src="./assets/hero-light.svg" width="880" alt="binrev — binary action space · firmware RE agent">
+  <source media="(max-width: 600px) and (prefers-color-scheme: dark)" srcset="./assets/presentation/hero-mobile-dark.svg">
+  <source media="(max-width: 600px)" srcset="./assets/presentation/hero-mobile-light.svg">
+  <source media="(prefers-color-scheme: dark)" srcset="./assets/presentation/hero-dark.svg">
+  <img src="./assets/presentation/hero-light.svg" width="960" alt="Hero diagram">
 </picture>
 
-<p align="center"><sub>The binary-action-space agent that extends Claude Code into domestic-SoC firmware reverse engineering.</sub></p>
+# binrev
 
-<p align="center">
-  <a href="./LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="license"></a>
-  <a href="https://github.com/SuperMarioYL/binrev/releases"><img src="https://img.shields.io/github/v/release/SuperMarioYL/binrev" alt="release"></a>
-  <a href="https://github.com/SuperMarioYL/binrev/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/SuperMarioYL/binrev/ci.yml?label=ci" alt="ci"></a>
-  <img src="https://img.shields.io/badge/Python-3.12%2B-blue" alt="python">
-  <img src="https://img.shields.io/badge/extends-Claude%20Code-5E5CE6" alt="extends Claude Code">
-  <img src="https://img.shields.io/badge/action_space-binary-10A37F" alt="binary action space">
-</p>
+**Give binary inspection a structured working state.**
 
-> **The decompiled graph, cross-references and ISA state are first-class context for the agent — not Ghidra's stdout log.**
+binrev holds disassembly, functions, cross-references, strings and notes in a BinState that can be inspected directly or explored through a configured model loop.
 
-<h2><img src="https://api.iconify.design/tabler:topology-star-3.svg?color=%230071E3&width=24" height="22" align="absmiddle" alt=""> Architecture</h2>
+## Why use it
+
+Text logs lose the relationship between an address, its callers and your notes. A shared binary state keeps those objects addressable as an investigation moves between functions.
+
+- **Addressable functions** — Lookup and cross-reference queries share a BinState.
+- **Offline inspection** — Capstone analysis needs no model API.
+- **Keep investigation notes** — Notes attach to function addresses.
+
+## Architecture
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./assets/atlas-dark.svg">
-  <source media="(prefers-color-scheme: light)" srcset="./assets/atlas-light.svg">
-  <img src="./assets/atlas-light.svg" width="880" alt="architecture: ARM firmware → Agent Loop → Qwen/DeepSeek, tools read/write a BinState fed by the Ghidra Bridge">
+  <source media="(max-width: 600px) and (prefers-color-scheme: dark)" srcset="./assets/presentation/architecture-mobile-dark.svg">
+  <source media="(max-width: 600px)" srcset="./assets/presentation/architecture-mobile-light.svg">
+  <source media="(prefers-color-scheme: dark)" srcset="./assets/presentation/architecture-dark.svg">
+  <img src="./assets/presentation/architecture-light.svg" width="960" alt="Architecture diagram">
 </picture>
 
-A single Python process, one `BinState` per binary. Ghidra is invoked as an external tool via subprocess (never in-process). The agent reads and writes the `BinState` through a binary action space (`decompile` / `xref` / `list_funcs` / `search_strings` / `set_note`) instead of feeding Ghidra stdout to the model as text.
+The Capstone path decodes supported instruction bytes and identifies candidate function boundaries and call targets. BinState stores the resulting functions and references. ToolRegistry exposes lookup and annotation actions; the optional OpenAI-compatible client drives those tools.
 
-<h2><img src="https://api.iconify.design/tabler:bolt.svg?color=%230071E3&width=24" height="22" align="absmiddle" alt=""> Why now</h2>
+| Component | Responsibility |
+| --- | --- |
+| `Binary bytes` | Raw / supported ELF input |
+| `Capstone decode` | binrev/binst.py |
+| `BinState` | Functions, xrefs, strings, notes |
+| `Tool registry` | binrev/tools.py |
 
-Qwen 3.8 27B finished a reverse-engineering job in 30 minutes, proving model capability has crossed the "can do non-trivial RE" threshold — the bottleneck has shifted from "can the model understand binaries" to "can the agent's action space carry binary state". [affaan-m/ECC](https://github.com/affaan-m/ECC) has been mapping the Claude Code action-space frontier, and binrev extends it into binary RE: the decompiled graph, xrefs and ISA state become first-class objects the agent can query and mutate. Domestic SoCs, head-unit ECUs and 信创 firmware ship as binaries with scarce public symbols, so this CN surface sits on a binary-action primitive the whole world is missing — not a "Chinese UI" localization that gets copied in one click.
+## Install and quickstart
 
-### vs Claude Code + Ghidra CLI
-
-| Axis | Claude Code + Ghidra CLI | binrev |
-|---|---|---|
-| Action space | text / shell (✓ general) | binary objects (✓) |
-| Decompiled graph as context | ✗ reads stdout | ✓ first-class object |
-| Cross-reference traversal | ✗ manual | ✓ agent-driven |
-| ISA / calling-convention state | ✗ | ✓ |
-| Domestic models (Qwen / DeepSeek) | — | ✓ |
-| General code reasoning | ✓ (strong) | — (binary only) |
-
-<h2><img src="https://api.iconify.design/tabler:rocket.svg?color=%230071E3&width=24" height="22" align="absmiddle" alt=""> Install</h2>
+Build with the version declared in the repository manifest. Run the example from the repository root.
 
 ```bash
-python3 -m venv .venv && .venv/bin/pip install -e '.[dev]'   # or pipx install binrev
+git clone https://github.com/SuperMarioYL/binrev.git
+cd binrev
+uv venv .venv
+uv pip install --python .venv/bin/python -e .
+source .venv/bin/activate
 ```
 
-> v0.1 depends on capstone (pip installs it automatically). Ghidra is an optional backend — without it, `inspect` still works via capstone disassembly.
-
-<h2><img src="https://api.iconify.design/tabler:mood-smile.svg?color=%230071E3&width=24" height="22" align="absmiddle" alt=""> Quickstart</h2>
+Decode a complete six-instruction ARM fixture embedded in the example, then print its functions and a callee’s disassembly.
 
 ```bash
-# 1. Build a minimal ARM firmware sample
-python3 -c "import struct; open('fw.bin','wb').write(b''.join(struct.pack('<I',i) for i in [0xE92D4010,0xEB000001,0xE59F0010,0xE8BD8010,0xE92D4010,0xE3A0002A,0xE8BD8010]))"
-
-# 2. Inspect the structured binary state (function table + xrefs)
-binrev inspect ./fw.bin --isa arm
-
-# 3. Read a called function's decompilation
-binrev inspect ./fw.bin --isa arm --func 0x10
+.venv/bin/python examples/presentation-demo.py
 ```
 
-<details><summary>sample output</summary>
+## Recorded demo
 
+<picture>
+  <source media="(max-width: 600px) and (prefers-color-scheme: dark)" srcset="./assets/presentation/process-mobile-dark.svg">
+  <source media="(max-width: 600px)" srcset="./assets/presentation/process-mobile-light.svg">
+  <source media="(prefers-color-scheme: dark)" srcset="./assets/presentation/process-dark.svg">
+  <img src="./assets/presentation/process-light.svg" width="960" alt="Process diagram">
+</picture>
+
+The fixture yields two functions and a call reference to the callee at 0x100c.
+
+```text
+ARM (A32) · 2 funcs · 1 xrefs · 0 strings · 0 notes · src=capstone
+0x00001000 entry: 0 callers
+0x0000100c sub_0000100c: 1 callers
+  0x0000100c:  push   {r4, lr}
+  0x00001010:  mov    r0, #1
+  0x00001014:  pop    {r4, pc}
 ```
-binrev inspect · ARM (A32) · 2 funcs · 1 xrefs · 0 strings · 0 notes · src=capstone
 
-addr         name                   size  callers
---------------------------------------------------------
-0x00000000  entry                    16  0
-0x00000010  sub_00000010             12  1
+The complete command and output are recorded in [docs/demo-results.json](./docs/demo-results.json). Inputs and reproduction code are included in the repository.
 
-function sub_00000010 @ 0x00000010  (12 bytes)
+![Existing terminal recording](./assets/demo.gif)
 
-callers:
-  0x00000004  (call)
+The existing recording is retained for context; the text example above documents the reproducible scenario.
 
-decompilation:
-  0x00000010:  push   {r4, lr}
-  0x00000014:  mov    r0, #0x2a
-  0x00000018:  pop    {r4, pc}
-```
-</details>
+## Usage
 
-<h2><img src="https://api.iconify.design/tabler:terminal-2.svg?color=%230071E3&width=24" height="22" align="absmiddle" alt=""> Usage</h2>
+The CLI exposes the following operations. Commands after the example use your own paths or identifiers.
 
 ```bash
-# Function table
-binrev inspect ./head_unit_firmware.bin --isa arm
-
-# A specific function (with callers + decompilation)
-binrev inspect ./head_unit_firmware.bin --isa arm --func 0x4080
-
-# Configure the Ghidra backend + Qwen/DeepSeek (optional)
-binrev config set --ghidra /opt/ghidra --target qwen --api-key sk-...
-
-# Run an agent session: "what does this firmware do?" (needs an LLM key)
-binrev ./head_unit_firmware.bin --isa arm -q "what does this firmware do / what does main call"
+binrev inspect firmware.bin --isa arm
+binrev inspect firmware.bin --isa arm --func 0x100c
+# Start model exploration only after configuring its endpoint:
+binrev firmware.bin --isa arm -q "List the entry function calls"
 ```
 
-More examples in `examples/`.
+## Configuration
 
-<h2><img src="https://api.iconify.design/tabler:photo.svg?color=%230071E3&width=24" height="22" align="absmiddle" alt=""> Demo</h2>
+Set the ISA and addresses to match the binary. ~/.binrev/config.json stores optional Ghidra and llm settings, including base_url, model and api_key. Offline inspect needs Capstone but no model credential.
 
-![demo](assets/demo.gif)
+## Integrations and responsibilities
 
-The asciinema recording is in `demos/demo.cast`; the VHS script is in `docs/demo.tape` (CI renders the gif in `demo.yml`).
+<picture>
+  <source media="(max-width: 600px) and (prefers-color-scheme: dark)" srcset="./assets/presentation/integrations-mobile-dark.svg">
+  <source media="(max-width: 600px)" srcset="./assets/presentation/integrations-mobile-light.svg">
+  <source media="(prefers-color-scheme: dark)" srcset="./assets/presentation/integrations-dark.svg">
+  <img src="./assets/presentation/integrations-light.svg" width="960" alt="Integrations diagram">
+</picture>
 
-<h2><img src="https://api.iconify.design/tabler:adjustments.svg?color=%230071E3&width=24" height="22" align="absmiddle" alt=""> Configuration</h2>
+The following routes are implemented in the source. Choose the input that matches your task and keep the resulting artifact with your project.
 
-Config lives at `~/.binrev/config.json` (persisted by `binrev config set`).
+| Route | Implemented role |
+| --- | --- |
+| ARM bytes | Local disassembly route |
+| Ghidra JSON | Optional exported analysis input |
+| Tool schemas | Function and reference queries |
+| OpenAI-compatible model | Optional agent client |
 
-| Key | Type | Default | Meaning |
-|---|---|---|---|
-| `ghidra_path` | string \| null | null | Ghidra install dir (containing `support/analyzeHeadless`) |
-| `llm.base_url` | string | DashScope | OpenAI-compatible endpoint |
-| `llm.api_key` | string | "" | Qwen / DeepSeek API key |
-| `llm.model` | string | `qwen-plus` | model name |
-| `--target` | `qwen` \| `deepseek` | — | preset a model family |
+## Limits and next steps
 
-<h2><img src="https://api.iconify.design/tabler:map-2.svg?color=%230071E3&width=24" height="22" align="absmiddle" alt=""> Roadmap</h2>
+- Capstone output is disassembly, not high-level decompiled source. Function carving and references are heuristic.
+- The demo uses six synthetic A32 instructions. No real firmware, Ghidra backend or live model is exercised.
+- Online exploration sends the selected analysis context to the configured model endpoint.
 
-- [x] **m1** `BinState` primitive: load ARM binary → decompile/xref/strings → structured state, readable via `binrev inspect`
-- [ ] **m2** agent loop: Qwen/DeepSeek + binary-action-space tools, interactive session answering "what does this binary do"
-- [ ] **m3** head-unit ECU firmware end-to-end demo + asciinema recording
-- [ ] Multi-ISA: x86 / LoongArch / MIPS / RISC-V
-- [ ] Incremental decompilation, bindiff
+Broader ISA coverage and validated real-firmware workflows need separate examples. Model conclusions should remain grounded in inspected addresses.
 
-<h2><img src="https://api.iconify.design/tabler:license.svg?color=%230071E3&width=24" height="22" align="absmiddle" alt=""> License</h2>
+## License and contributions
 
-MIT, see [LICENSE](./LICENSE). Issues and PRs welcome at the [tracker](https://github.com/SuperMarioYL/binrev/issues).
-
-## Share this
-
-```
-binrev — the binary-action-space agent that extends Claude Code into domestic-SoC firmware RE. Decompilation graph + xrefs as first-class LLM context, not Ghidra stdout. Qwen/DeepSeek + ARM. https://github.com/SuperMarioYL/binrev
-```
-
-<p align="center"><sub><a href="./LICENSE">MIT</a> © 2026 SuperMarioYL</sub></p>
+See [LICENSE](./LICENSE). When reporting an issue, include a minimal input, the command, and the observed output.

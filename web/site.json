@@ -1,64 +1,215 @@
 {
-  "schema": 1,
+  "schema": 3,
   "name": "binrev",
   "github": "https://github.com/SuperMarioYL/binrev",
   "host": "binrev.lei6393.com",
-  "lang": { "primary": "zh", "toggle": true },
-  "accent": ["#e6a144", "#d97b2e", "#c46a1f"],
+  "palette": "auto",
+  "lang": {
+    "primary": "en",
+    "toggle": true
+  },
+  "meta": {
+    "visual_style": "neon-particle",
+    "demo_source": "docs/demo-results.json"
+  },
   "hero": {
-    "eyebrow": { "zh": "固件 · 国产芯片 · 无符号", "en": "Firmware · CN SoCs · No Symbols" },
     "headline": {
-      "zh": "让 agent 第一次\n真正读懂固件",
-      "en": "Let agents finally\nread firmware"
+      "en": "Give binary inspection a structured working state.",
+      "zh": "为二进制检查建立结构化工作状态。"
     },
     "sub": {
-      "zh": "把固件里的函数、调用、反编译结果变成 agent 能直接查改的对象——而不是日志里的一行文本。国产芯片固件，从此可被读懂。",
-      "en": "Functions, call graphs, and decompiled results become objects the agent can query and change — not just lines of log text. CN-SoC firmware, finally legible to agents."
+      "en": "binrev holds disassembly, functions, cross-references, strings and notes in a BinState that can be inspected directly or explored through a configured model loop.",
+      "zh": "binrev 将反汇编、函数、交叉引用、字符串与笔记保存在 BinState 中，可直接检查，也可通过配置的模型循环探索。"
     },
-    "command": "binrev inspect ./firmware.bin --isa arm",
-    "cta": { "text": { "zh": "快速开始", "en": "Quick start" } },
-    "ctaGithub": { "text": { "zh": "GitHub", "en": "GitHub" } },
-    "scroll": { "text": { "zh": "向下看", "en": "Scroll" } }
+    "href": "#quickstart"
   },
   "advantages": [
     {
-      "title": { "zh": "固件不再是黑盒", "en": "Firmware is no longer a black box" },
-      "body": {
-        "zh": "agent 自己追函数、追调用关系、读反编译——像读源码一样读固件，不用再靠手翻交叉引用。",
-        "en": "The agent traces functions, call graphs, and decompiled code on its own — reading firmware like source, no more hand-trawling cross-references."
+      "title": {
+        "en": "Addressable functions",
+        "zh": "按地址访问函数"
       },
-      "chips": ["› 自主追函数表", "› 自主追调用关系", "› 自主读反编译"]
+      "body": {
+        "en": "Lookup and cross-reference queries share a BinState.",
+        "zh": "函数查询与交叉引用共用 BinState。"
+      }
     },
     {
-      "title": { "zh": "国产芯片固件也能逆", "en": "CN-SoC firmware, reverse-engineerable" },
-      "body": {
-        "zh": "默认对接国产模型，不再迁就海外 API。车机 ECU、信创固件这些以二进制交付、符号稀缺的目标，第一次有 agent 能上手。",
-        "en": "Built for CN models out of the box, no more bending to overseas APIs. Head-unit ECUs and 信创 firmware — delivered as binaries with scarce symbols — finally have an agent that can take them on."
+      "title": {
+        "en": "Offline inspection",
+        "zh": "离线检查"
       },
-      "chips": ["› 默认国产模型", "› 车机 ECU / 信创固件", "› 无符号也能上手"]
+      "body": {
+        "en": "Capstone analysis needs no model API.",
+        "zh": "Capstone 分析无需模型 API。"
+      }
     },
     {
-      "title": { "zh": "一条命令看清骨架", "en": "See the skeleton in one command" },
-      "body": {
-        "zh": "不用先装一整套重型工具——单条命令列出函数表与调用关系，反编译随用随看。",
-        "en": "No need to install a heavy toolchain first — one command lists functions and call graphs, decompilation on demand."
+      "title": {
+        "en": "Keep investigation notes",
+        "zh": "保留调查笔记"
       },
-      "chips": ["› 单命令函数表", "› 调用关系一目了然", "› 零重型依赖起步"]
-    },
-    {
-      "title": { "zh": "每一步推理都留痕", "en": "Every step leaves a trace" },
       "body": {
-        "zh": "agent 跨步骤记笔记、留线索，不会每轮从头来。逆到一半的上下文，下一次接着用。",
-        "en": "The agent takes notes across steps and keeps its thread — not starting from scratch each turn. Half-done context picks up where it left off."
-      },
-      "chips": ["› 跨步骤笔记", "› 上下文不丢", "› 断点续逆"]
+        "en": "Notes attach to function addresses.",
+        "zh": "笔记可以关联函数地址。"
+      }
     }
   ],
-  "scene": { "kind": "mesh" },
-  "cta": {
-    "headline": { "zh": "给 agent 一个能上手固件的动作空间", "en": "Give agents an action space that can work firmware" },
-    "sub": { "zh": "开源 · MIT · Python", "en": "Open source · MIT · Python" },
-    "button": { "zh": "查看 GitHub", "en": "See on GitHub" }
+  "demo": {
+    "title": {
+      "en": "Run it on a complete example",
+      "zh": "运行完整示例"
+    },
+    "note": {
+      "en": "Decode a complete six-instruction ARM fixture embedded in the example, then print its functions and a callee’s disassembly.",
+      "zh": "解码示例内嵌的完整六指令 ARM fixture，打印函数及被调用函数的反汇编。"
+    },
+    "source": "https://github.com/SuperMarioYL/binrev/blob/main/docs/demo-results.json",
+    "steps": [
+      {
+        "label": "Recorded run",
+        "body": "Disassemble 24 explicit A32 bytes with Capstone, carve functions and inspect a call reference. No model, Ghidra or real firmware.",
+        "command": ".venv/bin/python examples/presentation-demo.py",
+        "output": "ARM (A32) · 2 funcs · 1 xrefs · 0 strings · 0 notes · src=capstone\n0x00001000 entry: 0 callers\n0x0000100c sub_0000100c: 1 callers\n  0x0000100c:  push   {r4, lr}\n  0x00001010:  mov    r0, #1\n  0x00001014:  pop    {r4, pc}",
+        "image": "/assets/presentation/demo-0-light.svg",
+        "imageDark": "/assets/presentation/demo-0-dark.svg"
+      }
+    ]
   },
-  "footer": { "tag": { "zh": "MIT · 开源", "en": "MIT · Open source" } }
+  "quickstart": {
+    "title": {
+      "en": "Try it locally",
+      "zh": "本地上手"
+    },
+    "body": {
+      "en": "Decode a complete six-instruction ARM fixture embedded in the example, then print its functions and a callee’s disassembly.",
+      "zh": "解码示例内嵌的完整六指令 ARM fixture，打印函数及被调用函数的反汇编。"
+    },
+    "steps": [
+      {
+        "title": {
+          "en": "Install from source",
+          "zh": "从源码安装"
+        },
+        "code": "git clone https://github.com/SuperMarioYL/binrev.git\ncd binrev\nuv venv .venv\nuv pip install --python .venv/bin/python -e .\nsource .venv/bin/activate"
+      },
+      {
+        "title": {
+          "en": "Run the included example",
+          "zh": "运行随仓示例"
+        },
+        "code": ".venv/bin/python examples/presentation-demo.py"
+      }
+    ]
+  },
+  "limitations": [
+    {
+      "en": "Capstone output is disassembly, not high-level decompiled source. Function carving and references are heuristic.",
+      "zh": "Capstone 输出是反汇编，不是高级语言反编译源码；函数划分与引用识别属于启发式。"
+    },
+    {
+      "en": "The demo uses six synthetic A32 instructions. No real firmware, Ghidra backend or live model is exercised.",
+      "zh": "示例使用六条合成 A32 指令，不验证真实固件、Ghidra 后端或在线模型。"
+    },
+    {
+      "en": "Online exploration sends the selected analysis context to the configured model endpoint.",
+      "zh": "在线探索会把选定分析上下文发送给配置的模型端点。"
+    }
+  ],
+  "scene": {
+    "kind": "neon-graph",
+    "fallback": "/assets/presentation/scene-dark.svg",
+    "fallbackLight": "/assets/presentation/scene-light.svg"
+  },
+  "story": {
+    "intro": {
+      "title": {
+        "en": "A concrete task",
+        "zh": "从实际任务出发"
+      },
+      "body": {
+        "en": "Text logs lose the relationship between an address, its callers and your notes. A shared binary state keeps those objects addressable as an investigation moves between functions.",
+        "zh": "文本日志难以保持地址、调用者和笔记之间的关系。共享二进制状态让调查在函数之间移动时仍能按地址访问这些对象。"
+      }
+    },
+    "sections": [
+      {
+        "title": {
+          "en": "Follow the operation",
+          "zh": "处理过程"
+        },
+        "body": {
+          "en": "The Capstone path decodes supported instruction bytes and identifies candidate function boundaries and call targets. BinState stores the resulting functions and references. ToolRegistry exposes lookup and annotation actions; the optional OpenAI-compatible client drives those tools.",
+          "zh": "Capstone 路径解码支持的指令字节并识别候选函数边界和调用目标；BinState 保存函数与引用。ToolRegistry 暴露查询和标注操作，可选 OpenAI 兼容客户端驱动这些工具。"
+        },
+        "image": {
+          "light": "/assets/presentation/process-light.svg",
+          "dark": "/assets/presentation/process-dark.svg",
+          "alt": {
+            "en": "Follow the operation",
+            "zh": "处理过程"
+          }
+        }
+      },
+      {
+        "title": {
+          "en": "How binrev works",
+          "zh": "binrev 的工作方式"
+        },
+        "body": {
+          "en": "The Capstone path decodes supported instruction bytes and identifies candidate function boundaries and call targets. BinState stores the resulting functions and references. ToolRegistry exposes lookup and annotation actions; the optional OpenAI-compatible client drives those tools.",
+          "zh": "Capstone 路径解码支持的指令字节并识别候选函数边界和调用目标；BinState 保存函数与引用。ToolRegistry 暴露查询和标注操作，可选 OpenAI 兼容客户端驱动这些工具。"
+        },
+        "image": {
+          "light": "/assets/presentation/architecture-light.svg",
+          "dark": "/assets/presentation/architecture-dark.svg",
+          "alt": {
+            "en": "How binrev works",
+            "zh": "binrev 的工作方式"
+          }
+        }
+      },
+      {
+        "title": {
+          "en": "Connect the pieces",
+          "zh": "输入与输出"
+        },
+        "body": {
+          "en": "The following routes are implemented in the source. Choose the input that matches your task and keep the resulting artifact with your project.",
+          "zh": "以下路径已有源码实现。按任务选择输入，并把生成的结果与项目一起保存。"
+        },
+        "image": {
+          "light": "/assets/presentation/integrations-light.svg",
+          "dark": "/assets/presentation/integrations-dark.svg",
+          "alt": {
+            "en": "Connect the pieces",
+            "zh": "输入与输出"
+          }
+        }
+      }
+    ],
+    "details": [
+      {
+        "title": {
+          "en": "Configuration",
+          "zh": "配置"
+        },
+        "body": {
+          "en": "Set the ISA and addresses to match the binary. ~/.binrev/config.json stores optional Ghidra and llm settings, including base_url, model and api_key. Offline inspect needs Capstone but no model credential.",
+          "zh": "ISA 和地址应与二进制一致。~/.binrev/config.json 保存可选 Ghidra 与 llm 设置，包括 base_url、model 和 api_key。离线 inspect 需要 Capstone，无需模型凭据。"
+        }
+      },
+      {
+        "title": {
+          "en": "Further use",
+          "zh": "进一步使用"
+        },
+        "body": {
+          "en": "The CLI exposes the following operations. Commands after the example use your own paths or identifiers.",
+          "zh": "CLI 提供以下操作。示例之外的命令需要替换成你的文件路径或标识。"
+        },
+        "code": "binrev inspect firmware.bin --isa arm\nbinrev inspect firmware.bin --isa arm --func 0x100c\n# Start model exploration only after configuring its endpoint:\nbinrev firmware.bin --isa arm -q \"List the entry function calls\""
+      }
+    ]
+  }
 }

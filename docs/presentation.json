@@ -1,0 +1,78 @@
+{
+  "name": "binrev",
+  "tagline": "Give binary inspection a structured working state.",
+  "architecture": {
+    "title": "How binrev works",
+    "nodes": [
+      {
+        "title": "Binary bytes",
+        "detail": "Raw / supported ELF input"
+      },
+      {
+        "title": "Capstone decode",
+        "detail": "binrev/binst.py"
+      },
+      {
+        "title": "BinState",
+        "detail": "Functions, xrefs, strings, notes"
+      },
+      {
+        "title": "Tool registry",
+        "detail": "binrev/tools.py"
+      }
+    ],
+    "edges": [
+      [
+        0,
+        1
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        2,
+        3
+      ]
+    ]
+  },
+  "process": {
+    "title": "From input to a useful result",
+    "steps": [
+      {
+        "title": "Decode bytes",
+        "detail": "24 bytes of A32"
+      },
+      {
+        "title": "Build state",
+        "detail": "Functions and call targets"
+      },
+      {
+        "title": "Inspect callee",
+        "detail": "Addressed instruction listing"
+      }
+    ],
+    "result": "The fixture yields two functions and a call reference to the callee at 0x100c."
+  },
+  "integrations": {
+    "title": "Supported input and output routes",
+    "items": [
+      {
+        "title": "ARM bytes",
+        "detail": "Local disassembly route"
+      },
+      {
+        "title": "Ghidra JSON",
+        "detail": "Optional exported analysis input"
+      },
+      {
+        "title": "Tool schemas",
+        "detail": "Function and reference queries"
+      },
+      {
+        "title": "OpenAI-compatible model",
+        "detail": "Optional agent client"
+      }
+    ]
+  }
+}

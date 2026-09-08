@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "binrev"
 version = "0.1.0"
-description = "Binary-action-space reverse-engineering agent — decompiled graph, xrefs and ISA state as first-class context for Qwen/DeepSeek."
+description = "Inspect binary functions, cross-references and strings through a structured BinState, with optional model-driven tool exploration."
 readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "MIT" }

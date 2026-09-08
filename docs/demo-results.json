@@ -1,0 +1,13 @@
+{
+  "schema": 1,
+  "source_revision": "01362277c7ed88d1135b471701670d43461c2c1f",
+  "scope": "Disassemble 24 explicit A32 bytes with Capstone, carve functions and inspect a call reference. No model, Ghidra or real firmware.",
+  "steps": [
+    {
+      "label": "Recorded run",
+      "body": "Disassemble 24 explicit A32 bytes with Capstone, carve functions and inspect a call reference. No model, Ghidra or real firmware.",
+      "command": ".venv/bin/python examples/presentation-demo.py",
+      "output": "ARM (A32) · 2 funcs · 1 xrefs · 0 strings · 0 notes · src=capstone\n0x00001000 entry: 0 callers\n0x0000100c sub_0000100c: 1 callers\n  0x0000100c:  push   {r4, lr}\n  0x00001010:  mov    r0, #1\n  0x00001014:  pop    {r4, pc}"
+    }
+  ]
+}
