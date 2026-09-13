@@ -16,6 +16,7 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.syntax import Syntax
 
+from . import __version__
 from .agent import BinrevAgent, OpenAICompatibleClient
 from .binst import load_binary, render_inspect
 from .config import CONFIG_PATH, Config
@@ -63,7 +64,7 @@ def _make_agent(state, config: Config) -> BinrevAgent:
 
 
 @click.group(cls=_DefaultGroup, invoke_without_command=True)
-@click.version_option()
+@click.version_option(version=__version__, prog_name="binrev")
 @click.pass_context
 def cli(ctx: click.Context) -> None:
     """binrev — binary-action-space reverse-engineering agent."""
