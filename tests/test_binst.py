@@ -92,6 +92,24 @@ def test_elf_text_section_extraction(arm_elf_file, arm_code, base_addr):
     assert callee in state.functions
 
 
+def test_elf_string_addr_shares_code_address_space(arm_code, base_addr, tmp_path):
+    """A string inside .text reports a .text vaddr, not a file offset + base.
+
+    Regression: extraction used to scan the raw ELF image, so every string
+    address was off by the ELF header (52 bytes) and could not be
+    cross-referenced against function/xref addresses.
+    """
+    from conftest import make_arm_elf
+
+    code = arm_code + b"UART boot\x00"
+    elf = tmp_path / "head_unit.elf"
+    elf.write_bytes(make_arm_elf(code, base_addr))
+    state = load_binary(elf, ISAKind.ARM)
+    hits = state.search_strings("UART")
+    assert len(hits) == 1
+    assert hits[0].addr == base_addr + len(arm_code)
+
+
 def test_raw_file_load(arm_raw_file, base_addr):
     state = load_binary(arm_raw_file, ISAKind.ARM, base_addr=base_addr)
     assert len(state.functions) >= 1

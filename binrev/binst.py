@@ -326,7 +326,10 @@ def build_from_bytes(
             instructions=body,
         )
 
-    strings = _extract_strings(data, base_addr)
+    # Strings are pulled from the same mapped region the disassembler consumed,
+    # so their addresses share the .text vaddr space of functions/xrefs (scanning
+    # the raw image would offset every string by the ELF header).
+    strings = _extract_strings(code, base_addr)
     return BinState(
         isa=default_isa(isa_kind),
         base_addr=base_addr,
