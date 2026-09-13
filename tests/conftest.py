@@ -93,14 +93,3 @@ def arm_elf_file(tmp_path: Path, arm_code: bytes, base_addr: int) -> Path:
     p = tmp_path / "head_unit.elf"
     p.write_bytes(make_arm_elf(arm_code, base_addr))
     return p
-
-
-def pytest_collection_modifyitems(config, items):
-    """Auto-skip tests needing capstone if it is not importable."""
-    try:
-        import capstone  # noqa: F401
-    except ImportError:
-        skip_capstone = pytest.mark.skip(reason="capstone not installed in this env")
-        for item in items:
-            if "capstone" in item.keywords or getattr(item, "marker", None):
-                pass
