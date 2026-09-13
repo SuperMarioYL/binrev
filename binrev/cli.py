@@ -101,7 +101,7 @@ def run(binary: Path, isa: str, question: Optional[str]) -> None:
 @click.option("--func", "func", default=None, help="function address to show, e.g. 0x1000")
 def inspect(binary: Path, isa: str, func: Optional[str]) -> None:
     """Inspect a binary's BinState: function table or one function's decompilation."""
-    state = load_binary(binary, _parse_isa(isa))
+    state = _load_state(binary, _parse_isa(isa), Config.load())
     func_addr = int(func, 0) if func else None
     out = render_inspect(state, func_addr=func_addr)
     if func_addr is not None and state.decompile(func_addr):
