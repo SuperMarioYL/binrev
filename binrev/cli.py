@@ -44,6 +44,16 @@ def _parse_isa(value: str) -> ISAKind:
         raise click.BadParameter(f"unknown isa {value!r}; choose arm / thumb / aarch64")
 
 
+def _parse_func_addr(value: Optional[str]) -> Optional[int]:
+    """Parse ``--func`` like ``0x1000``; a clean usage error, not a traceback."""
+    if value is None:
+        return None
+    try:
+        return int(value, 0)
+    except ValueError:
+        raise click.BadParameter(f"{value!r} is not a function address (try hex like 0x1000)")
+
+
 def _load_state(binary: Path, isa: ISAKind, config: Config):
     """Load a BinState, preferring Ghidra when configured + available."""
     bridge = GhidraBridge(ghidra_path=Path(config.ghidra_path) if config.ghidra_path else None)
@@ -102,8 +112,8 @@ def run(binary: Path, isa: str, question: Optional[str]) -> None:
 @click.option("--func", "func", default=None, help="function address to show, e.g. 0x1000")
 def inspect(binary: Path, isa: str, func: Optional[str]) -> None:
     """Inspect a binary's BinState: function table or one function's decompilation."""
+    func_addr = _parse_func_addr(func)
     state = _load_state(binary, _parse_isa(isa), Config.load())
-    func_addr = int(func, 0) if func else None
     out = render_inspect(state, func_addr=func_addr)
     if func_addr is not None and state.decompile(func_addr):
         console.print(Syntax(out, "text", theme="ansi_dark"))

@@ -6,6 +6,8 @@ download, no Ghidra, no real LLM keys.
 
 from __future__ import annotations
 
+import struct
+
 import pytest
 
 # Skip the whole module if capstone (a key dep) is not importable here.
@@ -148,3 +150,66 @@ def test_to_json_roundtrip(arm_code, base_addr):
     j = state.to_json()
     assert "test note" in j
     assert "functions" in j
+
+
+# ------------------------------------------------------------------ corrupt ELF
+# A truncated firmware download or any file starting with \x7fELF is ordinary
+# user input; the capstone backend must degrade to the raw-blob fallback
+# instead of raising struct.error from header unpacks.
+
+
+def _arm_ehdr(e_shoff: int, e_shnum: int, e_shstrndx: int) -> bytes:
+    """Minimal 32-bit LE ARM ELF header with caller-controlled section table."""
+    return (
+        b"\x7fELF"
+        + struct.pack("<BBB", 1, 1, 1)  # class=32, data=LE, version
+        + bytes(7)  # osabi + padding
+        + struct.pack(
+            "<HHIIIIIHHHHHH",
+            2,        # e_type = ET_EXEC
+            40,       # e_machine = EM_ARM
+            1,        # e_version
+            0x1000,   # e_entry
+            0,        # e_phoff
+            e_shoff,  # e_shoff
+            0,        # e_flags
+            52,       # e_ehsize
+            32,       # e_phentsize
+            0,        # e_phnum
+            40,       # e_shentsize
+            e_shnum,  # e_shnum
+            e_shstrndx,  # e_shstrndx
+        )
+    )
+
+
+def test_elf_shoff_past_eof_falls_back_instead_of_crashing(tmp_path, arm_code):
+    """e_shoff claiming a section table past EOF → raw-blob handling, no struct.error."""
+    bad = tmp_path / "truncated.elf"
+    bad.write_bytes(_arm_ehdr(e_shoff=0xFFFFFF, e_shnum=3, e_shstrndx=2) + arm_code)
+
+    state = load_binary(bad, ISAKind.ARM)
+
+    assert state.source == "capstone"
+    assert len(state.functions) >= 1
+
+
+def test_elf_truncated_section_table_falls_back(tmp_path, arm_code):
+    """A section table whose later entries run past EOF stops at the guard."""
+    bad = tmp_path / "half-table.elf"
+    bad.write_bytes(_arm_ehdr(e_shoff=76, e_shnum=3, e_shstrndx=0) + arm_code + bytes(40))
+
+    state = load_binary(bad, ISAKind.ARM)
+
+    assert state.source == "capstone"
+    assert len(state.functions) >= 1
+
+
+def test_elf_header_shorter_than_ehdr_falls_back(tmp_path, arm_code):
+    """A file of 24..51 bytes starting with ELF magic cannot hold an Ehdr."""
+    short = tmp_path / "stub.elf"
+    short.write_bytes(b"\x7fELF" + struct.pack("<BBB", 1, 1, 1) + bytes(7) + bytes(20))
+
+    state = load_binary(short, ISAKind.ARM)
+
+    assert state.source == "capstone"

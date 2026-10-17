@@ -8,7 +8,7 @@ v0.1 scope: ARM (A32 / Thumb-2 / A64), single binary per session,
 OpenAI-compatible LLM (Qwen / DeepSeek).
 """
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 from .binst import BinState, build_from_bytes, load_binary, render_inspect
 from .models import ISAKind, XrefKind

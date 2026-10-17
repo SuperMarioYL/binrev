@@ -3,12 +3,22 @@
 Stored as a small JSON file (``~/.binrev/config.json``) so ``binrev config
 set`` persists across sessions.  The LLM section targets the OpenAI-compatible
 APIs offered by Qwen (DashScope) and DeepSeek.
+
+The file is user-editable, so :meth:`Config.load` treats it as untrusted
+input: an unreadable file is preserved as a ``<name>.corrupt-<nanoseconds>``
+sibling (a broken API key may still be recoverable) and fresh defaults are
+returned instead of a traceback, letting ``binrev config set`` repair in
+place.  Inside an otherwise valid file, keys with unknown names or
+non-string values are dropped, degrading to the CLI's clean "no LLM key
+configured" message rather than crashing.
 """
 
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass, asdict
+import sys
+import time
+from dataclasses import dataclass, asdict, fields
 from pathlib import Path
 from typing import Optional
 
@@ -40,6 +50,16 @@ class LLMConfig:
         return "custom"
 
 
+_LLM_FIELDS = {f.name for f in fields(LLMConfig)}
+
+
+def _clean_llm(raw: object) -> LLMConfig:
+    """Accept only known, string-valued llm keys; drop anything else."""
+    if not isinstance(raw, dict):
+        return LLMConfig()
+    return LLMConfig(**{k: v for k, v in raw.items() if k in _LLM_FIELDS and isinstance(v, str)})
+
+
 @dataclass
 class Config:
     """Persisted binrev configuration."""
@@ -52,17 +72,46 @@ class Config:
             self.llm = LLMConfig()
 
     @classmethod
-    def load(cls, path: Path = CONFIG_PATH) -> "Config":
+    def load(cls, path: Optional[Path] = None) -> "Config":
+        path = path or CONFIG_PATH
         if not path.exists():
             return cls()
-        data = json.loads(path.read_text(encoding="utf-8"))
-        llm_raw = data.get("llm", {})
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+            if not isinstance(data, dict):
+                raise ValueError("config must be a JSON object")
+        except (ValueError, OSError) as exc:  # JSONDecodeError / UnicodeDecodeError / unreadable
+            return cls._quarantine(path, exc)
+        ghidra = data.get("ghidra_path")
         return cls(
-            ghidra_path=data.get("ghidra_path"),
-            llm=LLMConfig(**llm_raw),
+            ghidra_path=ghidra if isinstance(ghidra, str) else None,
+            llm=_clean_llm(data.get("llm", {})),
         )
 
-    def save(self, path: Path = CONFIG_PATH) -> None:
+    @classmethod
+    def _quarantine(cls, path: Path, exc: Exception) -> "Config":
+        """Preserve an unreadable config beside itself and start fresh.
+
+        The next successful ``config set`` would otherwise overwrite the
+        corrupt bytes — possibly a recoverable API key — so they are renamed
+        out of the way first.  Preservation is best-effort: if the rename
+        fails we warn and continue rather than turning this into a new crash
+        path.
+        """
+        backup = path.with_name(f"{path.name}.corrupt-{time.time_ns()}")
+        try:
+            path.rename(backup)
+            note = f"preserved as {backup.name}"
+        except OSError:
+            note = "it could not be preserved"
+        print(
+            f"warning: {path} is unreadable ({exc}); {note} — starting fresh",
+            file=sys.stderr,
+        )
+        return cls()
+
+    def save(self, path: Optional[Path] = None) -> None:
+        path = path or CONFIG_PATH
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(
             json.dumps(asdict(self), indent=2, ensure_ascii=False),

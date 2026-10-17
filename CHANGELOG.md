@@ -6,6 +6,35 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-18
+
+### Fixed
+
+- A corrupt `~/.binrev/config.json` no longer crashes every command with a
+  raw traceback. The unreadable file is preserved as a
+  `config.json.corrupt-<nanoseconds>` sibling (a broken API key may still be
+  recoverable) and configuration restarts from defaults, so
+  `binrev config set` can repair in place instead of dead-ending. Unknown or
+  non-string keys inside an otherwise valid file are dropped to the existing
+  clean "no LLM key configured" path.
+- `binrev inspect --func` rejects a non-address value with a one-line usage
+  error (exit 2), matching the `--isa` flag's behavior, instead of leaking a
+  raw ValueError traceback.
+- A truncated or corrupt ELF whose section-header table points past end of
+  file falls back to raw-blob disassembly instead of raising `struct.error`
+  from the header unpacks.
+
+### Added
+
+- CLI test coverage for `binrev config set` / `binrev config show`
+  (including the corrupt-config repair contract) and `binrev run -q` agent
+  sessions, driven in-process via `CliRunner`.
+
+### Changed
+
+- `Config.load` / `Config.save` resolve the config path at call time, so
+  embedders and tests can redirect `~/.binrev/config.json` hermetically.
+
 ## [0.2.0] - 2026-09-14
 
 ### Fixed
@@ -59,6 +88,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `binrev inspect`, `binrev config` and the default `binrev <binary>` agent
   session CLI.
 
-[Unreleased]: https://github.com/SuperMarioYL/binrev/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/SuperMarioYL/binrev/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/SuperMarioYL/binrev/releases/tag/v0.3.0
 [0.2.0]: https://github.com/SuperMarioYL/binrev/releases/tag/v0.2.0
 [0.1.0]: https://github.com/SuperMarioYL/binrev/releases/tag/v0.1.0

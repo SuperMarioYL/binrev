@@ -126,6 +126,11 @@ def _read_elf_code(data: bytes) -> tuple[bytes, int, int]:
     is_64 = data[4] == 2
     endian = "<" if data[5] == 1 else ">"  # EI_DATA: 1=little, 2=big
 
+    # The Ehdr itself must fit (64 bytes for ELF64, 52 for ELF32) or the
+    # field unpacks below run past EOF on a truncated header.
+    if len(data) < (64 if is_64 else 52):
+        return data, 0, 0
+
     if is_64:
         # Elf64_Ehdr: e_entry@18, e_shoff@40, e_shentsize@58, e_shnum@60, e_shstrndx@62
         e_entry = struct.unpack_from(endian + "Q", data, 24)[0]
@@ -145,8 +150,15 @@ def _read_elf_code(data: bytes) -> tuple[bytes, int, int]:
         # No section headers — hand back the whole image as code.
         return data, 0, e_entry
 
-    # Read the section-header-string-table to locate .text by name.
+    # A truncated/corrupt image can claim tables that reach past EOF; bail to
+    # the raw fallback instead of raising struct.error from the unpacks below.
+    # Field spans read per entry: shstr header 32+8 (64-bit) / 20+4 (32-bit);
+    # full section entry up to sh_size at +32/+20 (+8/+4 wide).
     shstr_off = e_shoff + e_shstrndx * e_shentsize
+    if shstr_off + (40 if is_64 else 24) > len(data):
+        return data, 0, e_entry
+
+    # Read the section-header-string-table to locate .text by name.
     if is_64:
         shstr_sh_offset = struct.unpack_from(endian + "Q", data, shstr_off + 24)[0]
         shstr_sh_size = struct.unpack_from(endian + "Q", data, shstr_off + 32)[0]
@@ -157,6 +169,8 @@ def _read_elf_code(data: bytes) -> tuple[bytes, int, int]:
 
     for i in range(e_shnum):
         off = e_shoff + i * e_shentsize
+        if off + (40 if is_64 else 24) > len(data):
+            break  # section table truncated — fall through to the raw fallback
         sh_name = struct.unpack_from(endian + "I", data, off)[0]
         name_end = strtab.find(b"\x00", sh_name)
         name = strtab[sh_name:name_end].decode("ascii", "replace") if name_end > sh_name else ""
