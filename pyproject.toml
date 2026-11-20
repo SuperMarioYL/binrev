@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "binrev"
-version = "0.3.0"
+version = "0.4.0"
 description = "Inspect binary functions, cross-references and strings through a structured BinState, with optional model-driven tool exploration."
 readme = "README.md"
 requires-python = ">=3.12"

@@ -175,6 +175,19 @@ def test_config_set_repairs_a_corrupt_config(tmp_path, monkeypatch):
     assert list(tmp_path.glob("config.json.corrupt-*"))  # evidence preserved
 
 
+def test_config_show_leaves_a_corrupt_config_in_place(tmp_path, monkeypatch):
+    """`config show` only displays: it must not move the user's file."""
+    cfg_path = _use_isolated_config(monkeypatch, tmp_path)
+    cfg_path.write_text("{ broken", encoding="utf-8")
+
+    result = CliRunner().invoke(cli, ["config", "show"])
+
+    assert result.exit_code == 0
+    assert cfg_path.read_text(encoding="utf-8") == "{ broken"
+    assert list(tmp_path.glob("config.json.corrupt-*")) == []
+
+
+
 # ------------------------------------------------------------------------ run
 
 

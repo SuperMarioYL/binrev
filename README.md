@@ -96,7 +96,7 @@ binrev firmware.bin --isa arm -q "List the entry function calls"
 
 ## 配置
 
-ISA 和地址应与二进制一致。~/.binrev/config.json 保存可选 Ghidra 与 llm 设置，包括 base_url、model 和 api_key。离线 inspect 需要 Capstone，无需模型凭据。
+ISA 和地址应与二进制一致。`binrev config set --api-key ... --model qwen-plus` 写入 ~/.binrev/config.json（可选 Ghidra 与 llm 设置，包括 base_url、model 和 api_key），`binrev config show` 查看当前值。该文件保存 API key，创建与保存权限固定为 0600，仅你本人可读。离线 inspect 需要 Capstone，无需模型凭据。
 
 ## 集成与职责分工
 
@@ -119,6 +119,7 @@ ISA 和地址应与二进制一致。~/.binrev/config.json 保存可选 Ghidra �
 ## 限制与后续方向
 
 - Capstone 输出是反汇编，不是高级语言反编译源码；函数划分与引用识别属于启发式。
+- 字符串表只覆盖参与反汇编的区域（ELF 输入为 .text），不扫描 .rodata 等其他段；被任意不可打印字节分隔、长度 ≥4 的可打印串都会被识别。
 - 示例使用六条合成 A32 指令，不验证真实固件、Ghidra 后端或在线模型。
 - 在线探索会把选定分析上下文发送给配置的模型端点。
 

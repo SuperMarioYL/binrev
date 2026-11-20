@@ -235,7 +235,12 @@ def _is_jump(insn: Instruction) -> bool:
 
 
 def _extract_strings(data: bytes, base_addr: Addr, min_len: int = 4) -> list[StringEntry]:
-    """Pull printable ASCII runs (>= min_len) out of the blob."""
+    """Pull printable ASCII runs (>= min_len) out of the blob.
+
+    A run ends at any non-printable byte, whichever one it is, and the
+    trailing run at end-of-buffer counts too: whether a string is reported
+    must not depend on the separator that happens to follow it.
+    """
     strings: list[StringEntry] = []
     cur = bytearray()
     start = 0
@@ -245,7 +250,7 @@ def _extract_strings(data: bytes, base_addr: Addr, min_len: int = 4) -> list[Str
                 start = i
             cur.append(b)
         else:
-            if b == 0 and len(cur) >= min_len:
+            if len(cur) >= min_len:
                 strings.append(StringEntry(addr=base_addr + start, value=cur.decode("ascii", "replace")))
             cur = bytearray()
     if len(cur) >= min_len:

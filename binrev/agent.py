@@ -85,6 +85,9 @@ class BinrevAgent:
     def ask(self, question: str) -> str:
         """Answer a user question by running the tool-calling loop."""
         self.history.append({"role": "user", "content": question})
+        # Each question owns its answer: a stale summary from an earlier turn
+        # must never be returned as this turn's result.
+        self.final_summary = None
         for _ in range(self.max_steps):
             response = self.client.chat_completions_create(
                 messages=self.history,
@@ -96,8 +99,8 @@ class BinrevAgent:
             # Always record the assistant turn so the model sees its own history.
             self.history.append(_assistant_turn(msg, tool_calls))
             if not tool_calls:
-                self.final_summary = _content(msg) or self.final_summary
-                return self.final_summary or ""
+                self.final_summary = _content(msg)
+                return self.final_summary
             results = self.registry.dispatch_many(tool_calls)
             self.steps_log.append((tool_calls, results))
             self.history.extend(_tool_messages(results))
@@ -105,7 +108,7 @@ class BinrevAgent:
                 done_call = next(tc for tc in tool_calls if tc.name == "done")
                 self.final_summary = done_call.arguments.get("summary", "")
                 return self.final_summary
-        self.final_summary = self.final_summary or "(agent reached step limit without a done call)"
+        self.final_summary = "(agent reached step limit without a done call)"
         return self.final_summary
 
 

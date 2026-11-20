@@ -9,9 +9,10 @@
     "toggle": true
   },
   "meta": {
-    "content_version": "v0.3.0",
+    "content_version": "v0.4.0",
     "visual_style": "neon-particle",
-    "demo_source": "docs/demo-results.json"
+    "demo_source": "docs/demo-results.json",
+    "generated_at": "2026-11-21"
   },
   "hero": {
     "headline": {
@@ -107,6 +108,10 @@
     {
       "en": "Capstone output is disassembly, not high-level decompiled source. Function carving and references are heuristic.",
       "zh": "Capstone 输出是反汇编，不是高级语言反编译源码；函数划分与引用识别属于启发式。"
+    },
+    {
+      "en": "The string table covers only the disassembled region (.text for ELF inputs), not .rodata; any printable run of 4+ characters separated by a non-printable byte is reported.",
+      "zh": "字符串表只覆盖参与反汇编的区域（ELF 输入为 .text），不扫描 .rodata；被任意不可打印字节分隔、长度 ≥4 的可打印串都会被识别。"
     },
     {
       "en": "The demo uses six synthetic A32 instructions. No real firmware, Ghidra backend or live model is exercised.",
@@ -208,8 +213,8 @@
           "zh": "配置"
         },
         "body": {
-          "en": "Set the ISA and addresses to match the binary. ~/.binrev/config.json stores optional Ghidra and llm settings, including base_url, model and api_key. Offline inspect needs Capstone but no model credential.",
-          "zh": "ISA 和地址应与二进制一致。~/.binrev/config.json 保存可选 Ghidra 与 llm 设置，包括 base_url、model 和 api_key。离线 inspect 需要 Capstone，无需模型凭据。"
+          "en": "Set the ISA and addresses to match the binary. binrev config set writes ~/.binrev/config.json (optional Ghidra and llm settings, including base_url, model and api_key) and binrev config show prints it; the file holds an API key and is kept mode 0600. Offline inspect needs Capstone but no model credential.",
+          "zh": "ISA 和地址应与二进制一致。binrev config set 写入 ~/.binrev/config.json（可选 Ghidra 与 llm 设置，包括 base_url、model 和 api_key），binrev config show 查看；该文件保存 API key，权限固定为 0600。离线 inspect 需要 Capstone，无需模型凭据。"
         }
       },
       {

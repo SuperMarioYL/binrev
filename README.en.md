@@ -96,7 +96,7 @@ binrev firmware.bin --isa arm -q "List the entry function calls"
 
 ## Configuration
 
-Set the ISA and addresses to match the binary. ~/.binrev/config.json stores optional Ghidra and llm settings, including base_url, model and api_key. Offline inspect needs Capstone but no model credential.
+Set the ISA and addresses to match the binary. `binrev config set --api-key ... --model qwen-plus` writes ~/.binrev/config.json (optional Ghidra and llm settings, including base_url, model and api_key); `binrev config show` prints the current values. The file holds an API key and is created and saved mode 0600, readable only by you. Offline inspect needs Capstone but no model credential.
 
 ## Integrations and responsibilities
 
@@ -119,6 +119,7 @@ The following routes are implemented in the source. Choose the input that matche
 ## Limits and next steps
 
 - Capstone output is disassembly, not high-level decompiled source. Function carving and references are heuristic.
+- The string table covers only the disassembled region (.text for ELF inputs), not .rodata or other segments; any printable run of 4+ characters separated by a non-printable byte is reported.
 - The demo uses six synthetic A32 instructions. No real firmware, Ghidra backend or live model is exercised.
 - Online exploration sends the selected analysis context to the configured model endpoint.
 

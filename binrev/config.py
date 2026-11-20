@@ -5,17 +5,21 @@ set`` persists across sessions.  The LLM section targets the OpenAI-compatible
 APIs offered by Qwen (DashScope) and DeepSeek.
 
 The file is user-editable, so :meth:`Config.load` treats it as untrusted
-input: an unreadable file is preserved as a ``<name>.corrupt-<nanoseconds>``
-sibling (a broken API key may still be recoverable) and fresh defaults are
-returned instead of a traceback, letting ``binrev config set`` repair in
-place.  Inside an otherwise valid file, keys with unknown names or
-non-string values are dropped, degrading to the CLI's clean "no LLM key
-configured" message rather than crashing.
+input: an unreadable file is left where the user put it and fresh defaults
+are returned instead of a traceback, so read-only commands (``inspect``,
+``config show``) never mutate ``~/.binrev``.  The bytes that cannot be parsed
+are preserved as a ``<name>.corrupt-<nanoseconds>`` sibling by
+:meth:`Config.save`, at the moment a write would otherwise destroy a possibly
+recoverable API key, and ``binrev config set`` repairs in place.  Inside an
+otherwise valid file, keys with unknown names or non-string values are
+dropped, degrading to the CLI's clean "no LLM key configured" message rather
+than crashing.
 """
 
 from __future__ import annotations
 
 import json
+import os
 import sys
 import time
 from dataclasses import dataclass, asdict, fields
@@ -60,6 +64,14 @@ def _clean_llm(raw: object) -> LLMConfig:
     return LLMConfig(**{k: v for k, v in raw.items() if k in _LLM_FIELDS and isinstance(v, str)})
 
 
+def _parse(text: str) -> dict:
+    """Decode a config document, rejecting anything that is not a JSON object."""
+    data = json.loads(text)
+    if not isinstance(data, dict):
+        raise ValueError("config must be a JSON object")
+    return data
+
+
 @dataclass
 class Config:
     """Persisted binrev configuration."""
@@ -77,11 +89,16 @@ class Config:
         if not path.exists():
             return cls()
         try:
-            data = json.loads(path.read_text(encoding="utf-8"))
-            if not isinstance(data, dict):
-                raise ValueError("config must be a JSON object")
+            data = _parse(path.read_text(encoding="utf-8"))
         except (ValueError, OSError) as exc:  # JSONDecodeError / UnicodeDecodeError / unreadable
-            return cls._quarantine(path, exc)
+            # Reading is not writing: the file stays where the user put it and
+            # the next save preserves it before overwriting.
+            print(
+                f"warning: {path} is unreadable ({exc}); using defaults — "
+                "`binrev config set` preserves it before rewriting",
+                file=sys.stderr,
+            )
+            return cls()
         ghidra = data.get("ghidra_path")
         return cls(
             ghidra_path=ghidra if isinstance(ghidra, str) else None,
@@ -89,34 +106,40 @@ class Config:
         )
 
     @classmethod
-    def _quarantine(cls, path: Path, exc: Exception) -> "Config":
-        """Preserve an unreadable config beside itself and start fresh.
+    def _preserve_unreadable(cls, path: Path) -> None:
+        """Rename an unparseable config out of the way before it is overwritten.
 
-        The next successful ``config set`` would otherwise overwrite the
-        corrupt bytes — possibly a recoverable API key — so they are renamed
-        out of the way first.  Preservation is best-effort: if the rename
-        fails we warn and continue rather than turning this into a new crash
-        path.
+        The write is the moment the bytes would be lost — possibly a
+        recoverable API key — so preservation belongs here, not on load.
+        Best-effort: if the rename fails we warn and continue rather than
+        turning this into a new crash path.
         """
-        backup = path.with_name(f"{path.name}.corrupt-{time.time_ns()}")
+        if not path.exists():
+            return
         try:
-            path.rename(backup)
-            note = f"preserved as {backup.name}"
-        except OSError:
-            note = "it could not be preserved"
-        print(
-            f"warning: {path} is unreadable ({exc}); {note} — starting fresh",
-            file=sys.stderr,
-        )
-        return cls()
+            _parse(path.read_text(encoding="utf-8"))
+        except (ValueError, OSError) as exc:
+            backup = path.with_name(f"{path.name}.corrupt-{time.time_ns()}")
+            try:
+                path.rename(backup)
+                note = f"preserved as {backup.name}"
+            except OSError:
+                note = "it could not be preserved"
+            print(
+                f"warning: {path} is unreadable ({exc}); {note} — writing a fresh config",
+                file=sys.stderr,
+            )
 
     def save(self, path: Optional[Path] = None) -> None:
         path = path or CONFIG_PATH
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(
-            json.dumps(asdict(self), indent=2, ensure_ascii=False),
-            encoding="utf-8",
-        )
+        self._preserve_unreadable(path)
+        # The file holds an API key: create it 0600, and chmod afterwards
+        # because O_CREAT leaves an existing file's (possibly 0644) mode alone.
+        fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        with os.fdopen(fd, "w", encoding="utf-8") as fh:
+            fh.write(json.dumps(asdict(self), indent=2, ensure_ascii=False))
+        os.chmod(path, 0o600)
 
     def apply_target(self, target: str) -> None:
         """Point the LLM config at a known model family (qwen / deepseek)."""

@@ -6,6 +6,32 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-21
+
+### Fixed
+
+- An interactive agent session keeps one answer per question. An empty model
+  reply or a step-limit stop used to return the previous question's
+  conclusion as if it answered the new one; the step-limit notice also never
+  appeared after the first successful answer.
+- `binrev config show` and `binrev inspect` no longer rename an unreadable
+  `~/.binrev/config.json` while merely reading it. Preservation happens at the
+  write that would destroy the bytes: `binrev config set` still keeps them as a
+  `config.json.corrupt-<nanoseconds>` sibling before writing a fresh file.
+- The config file, which holds the LLM API key, is created and kept mode
+  `0600` instead of the umask default `0644`, so other local accounts cannot
+  read the key.
+- String extraction reports every printable run, not only runs terminated by
+  NUL. CR/LF- and tab-separated text now appears in `search_strings` and the
+  inspect summary, matching the run that was already reported when it ended at
+  end-of-buffer.
+
+### Changed
+
+- README (both locales) documents `binrev config set` / `binrev config show`
+  and the `0600` config mode, and states that the capstone string table covers
+  the disassembled region only.
+
 ## [0.3.0] - 2026-10-18
 
 ### Fixed
@@ -88,7 +114,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `binrev inspect`, `binrev config` and the default `binrev <binary>` agent
   session CLI.
 
-[Unreleased]: https://github.com/SuperMarioYL/binrev/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/SuperMarioYL/binrev/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/SuperMarioYL/binrev/releases/tag/v0.4.0
 [0.3.0]: https://github.com/SuperMarioYL/binrev/releases/tag/v0.3.0
 [0.2.0]: https://github.com/SuperMarioYL/binrev/releases/tag/v0.2.0
 [0.1.0]: https://github.com/SuperMarioYL/binrev/releases/tag/v0.1.0

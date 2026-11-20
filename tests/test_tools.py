@@ -174,3 +174,28 @@ def test_agent_loop_step_limit(state):
     out = agent.ask("loop")
     assert "step limit" in out
     assert len(client.calls) == 3
+
+
+def test_second_question_does_not_replay_the_first_answer(state):
+    """Each ask() owns its answer: an empty turn must not return the old summary."""
+    client = _ScriptedClient([
+        _resp(_msg(tool_calls=[_call("c1", "done", {"summary": "answer A"})])),
+        _resp(_msg(content="", tool_calls=None)),
+    ])
+    agent = BinrevAgent(state=state, client=client)
+
+    assert agent.ask("first") == "answer A"
+    assert agent.ask("second") == ""
+
+
+def test_step_limit_is_reported_after_an_earlier_answer(state):
+    """A later question that runs out of steps reports the limit, not the old answer."""
+    forever = _resp(_msg(tool_calls=[_call("c2", "list_funcs", {})]))
+    client = _ScriptedClient(
+        [_resp(_msg(tool_calls=[_call("c1", "done", {"summary": "first answer"})]))]
+        + [forever] * 10
+    )
+    agent = BinrevAgent(state=state, client=client, max_steps=2)
+
+    assert agent.ask("first") == "first answer"
+    assert "step limit" in agent.ask("second")

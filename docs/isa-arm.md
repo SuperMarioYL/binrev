@@ -1,6 +1,6 @@
-# ARM ISA reference (binrev v0.1)
+# ARM ISA reference
 
-binrev v0.1 targets the ARM family — A32, Thumb-2 and A64. This document is
+binrev targets the ARM family — A32, Thumb-2 and A64. This document is
 the quick ABI reference surfaced to the agent as ISA context when reversing a
 domestic-SoC / head-unit firmware blob.
 
@@ -69,8 +69,8 @@ IDA/Ghidra. binrev's value is that the agent holds the *recovered* graph and
 xrefs as first-class objects it can traverse itself, rather than a human
 pasting Ghidra stdout into a chat.
 
-## Beyond v0.1
+## Beyond ARM
 
-x86, LoongArch, MIPS and RISC-V are out of scope for v0.1; the `ISA` model
+x86, LoongArch, MIPS and RISC-V are out of scope; the `ISA` model
 and capstone loader are designed so adding a family is mostly a new
 `arch_map` entry plus ISA metadata.

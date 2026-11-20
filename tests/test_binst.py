@@ -83,6 +83,25 @@ def test_search_strings_in_data_blob():
     assert any("version" in s.value for s in hits2)
 
 
+def test_search_strings_finds_runs_ended_by_crlf_or_cr(base_addr):
+    """A printable run ends at any non-printable byte, not only at NUL.
+
+    Regression: the extractor appended a run only when the terminator was
+    exactly 0, while also accepting an unterminated run at EOF — so the same
+    text was a string at end-of-buffer and vanished in the middle of the file.
+    """
+    data = b"\x00\x00ABCDEF\r\n\x00\x00\x00GHIJKL\r\x00"
+    state = build_from_bytes(data, ISAKind.ARM, base_addr=base_addr)
+
+    crlf = state.search_strings("ABCDEF")
+    cr = state.search_strings("GHIJKL")
+
+    assert len(crlf) == 1
+    assert crlf[0].addr == base_addr + data.index(b"ABCDEF")
+    assert len(cr) == 1
+    assert cr[0].addr == base_addr + data.index(b"GHIJKL")
+
+
 def test_elf_text_section_extraction(arm_elf_file, arm_code, base_addr):
     """A real ELF: .text bytes + entry point are extracted, not the headers."""
     state = load_binary(arm_elf_file, ISAKind.ARM)
